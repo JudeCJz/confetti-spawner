@@ -1,0 +1,16 @@
+# Binaries
+*.exe
+*.dll
+*.pdb
+
+# Archives
+*.zip
+*.rar
+*.7z
+
+# Visual Studio / Project specific
+.vs/
+bin/
+obj/
+config/
+Confetti-Portable/
