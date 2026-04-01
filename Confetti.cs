@@ -231,16 +231,19 @@ string.Join(Environment.NewLine, new string[] {
     public class Particle
     {
         public float X, Y, VX, VY, Angle, Spin, W, H, Tick, WFreq;
-        public Color Col;
+        public int ColorIndex;
         static Random R = new Random();
         static Color[] Palette = { Color.FromArgb(167,139,250), Color.FromArgb(244,114,182), Color.FromArgb(251,146,60), Color.FromArgb(52,211,153), Color.FromArgb(96,165,250), Color.White };
+        public static readonly Brush[] Brushes = Palette.Select(c => new SolidBrush(c)).Cast<Brush>().ToArray();
+
         public Particle(int sw, int sh)
         {
             WFreq = (float)(R.NextDouble()*0.1+0.1); Tick = (float)(R.NextDouble()*6.28);
             if (AppStore.Origin == "top") { X = (float)(sw/2+(R.NextDouble()-0.5)*sw*AppStore.Density); Y = -50; VX = (float)(R.NextDouble()*10-5)*AppStore.Spread; VY = (float)(R.NextDouble()*5+3.0f); }
             else if (AppStore.Origin == "center") { X = sw/2f; Y = sh/2f; double a = R.NextDouble()*6.28; float m = (float)(R.NextDouble()*AppStore.Speed*0.8+AppStore.Speed*0.4); VX = (float)Math.Cos(a)*m*AppStore.Spread; VY = (float)Math.Sin(a)*m; }
             else { bool left = R.NextDouble()<0.5; X = left?-20:sw+20; Y = sh+20; double a = (left?-70:-110)*Math.PI/180+(R.NextDouble()-0.5)*0.4*AppStore.Density; float m = (float)(R.NextDouble()*AppStore.Speed*0.7+AppStore.Speed*0.9); VX=(float)Math.Cos(a)*m*AppStore.Spread; VY=(float)Math.Sin(a)*m; }
-            Spin = (float)(R.NextDouble()*30-15); W = (float)(R.NextDouble()*12+8)*AppStore.Size; H = W*0.6f; Col = Palette[R.Next(Palette.Length)];
+            Spin = (float)(R.NextDouble()*30-15); W = (float)(R.NextDouble()*12+8)*AppStore.Size; H = W*0.6f; 
+            ColorIndex = R.Next(Palette.Length);
         }
         public bool Update(float g, float w, int sh) { Tick += WFreq; VY += g; VX *= 0.99f; VY *= 0.99f; X += VX + (float)Math.Sin(Tick)*w; Y += VY; Angle += Spin; return Y < sh + 100 && !(Y < -500 && VY < 0); }
 
@@ -692,10 +695,21 @@ string.Join(Environment.NewLine, new string[] {
 
         protected override void OnPaint(PaintEventArgs e) {
             e.Graphics.SmoothingMode = SmoothingMode.None; e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
+            PointF[] pts = new PointF[4];
+            double toRad = Math.PI / 180.0;
             foreach(var p in parts) {
-                var st=e.Graphics.Save(); e.Graphics.TranslateTransform(p.X, p.Y); e.Graphics.RotateTransform(p.Angle);
-                using(var br=new SolidBrush(p.Col)) e.Graphics.FillRectangle(br, -p.W/2, -p.H/2, p.W, p.H);
-                e.Graphics.Restore(st);
+                double rad = p.Angle * toRad;
+                double cos = Math.Cos(rad);
+                double sin = Math.Sin(rad);
+                float hW = p.W * 0.5f;
+                float hH = p.H * 0.5f;
+
+                pts[0] = new PointF((float)(p.X + (-hW * cos - -hH * sin)), (float)(p.Y + (-hW * sin + -hH * cos)));
+                pts[1] = new PointF((float)(p.X + (hW * cos - -hH * sin)), (float)(p.Y + (hW * sin + -hH * cos)));
+                pts[2] = new PointF((float)(p.X + (hW * cos - hH * sin)), (float)(p.Y + (hW * sin + hH * cos)));
+                pts[3] = new PointF((float)(p.X + (-hW * cos - hH * sin)), (float)(p.Y + (-hW * sin + hH * cos)));
+
+                e.Graphics.FillPolygon(Particle.Brushes[p.ColorIndex], pts);
             }
         }
         protected override void WndProc(ref Message m) { 
