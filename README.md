@@ -10,7 +10,9 @@ A simple and fun application to spawn confetti on your desktop!
 
 ## Demo
 
-![Confetti Demo](./demo.mp4)
+[Watch the Demo Video](./demo.mp4)
+
+https://github.com/JudeCJz/confetti-spawner/blob/main/demo.mp4?raw=true
 
 ## How to use
 
